@@ -13,6 +13,8 @@ PREDICTION_MASK = {
     "offensive": False,
     "humor": False,
     "toxic_score": False,
+    "discogem1": False,
+    "discogem2": False
 }
 
 NUM_LABEL_PLUS_ONE = {
@@ -29,6 +31,8 @@ NUM_LABEL_PLUS_ONE = {
     "offensive": False,
     "humor": False, 
     "toxic_score": False,
+    "discogem1": False,
+    "discogem2": False
 }
 
 ANSWER_MINUS_ONE = {
@@ -45,4 +49,6 @@ ANSWER_MINUS_ONE = {
     "offensive": True,
     "humor": True,
     "toxic_score": True,
+    "discogem1": True,
+    "discogem2": True
 }

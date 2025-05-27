@@ -10,8 +10,9 @@ np.bool = bool
 
 from transformers import HfArgumentParser
 from src.parse_args import model_type_to_dataclass_types
-from src.training_paradigm import LearnFromScratchParadigm, ActiveLearningParadigm, \
-    ActiveLearningWithInteractionParadigm
+from src.training_paradigm import LearnFromScratchParadigm
+# from src.training_paradigm import LearnFromScratchParadigm, ActiveLearningParadigm, \
+#     ActiveLearningWithInteractionParadigm
 
 
 def main() -> None:
@@ -49,10 +50,10 @@ def main() -> None:
     Paradigm = None
     if args.training_paradigm == "learn_from_scratch":
         Paradigm = LearnFromScratchParadigm
-    elif args.training_paradigm == "active_learning":
-        Paradigm = ActiveLearningParadigm
-    elif args.training_paradigm == "active_learning_with_interaction":
-        Paradigm = ActiveLearningWithInteractionParadigm
+    # elif args.training_paradigm == "active_learning":
+    #     Paradigm = ActiveLearningParadigm
+    # elif args.training_paradigm == "active_learning_with_interaction":
+    #     Paradigm = ActiveLearningWithInteractionParadigm
     training_paradigm = Paradigm(args)
     training_paradigm.train_and_test()
 

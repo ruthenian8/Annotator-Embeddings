@@ -18,8 +18,7 @@ from overrides import override
 from src.module import BaseModule
 from src.utils.logger_utils import UninitializedWeightsFilter
 from src.transformer_models import EncoderModule, Seq2SeqModule
-from src.dataset import _read_in_data, _random_sample, DataModule, ActiveSelectionDataModule, \
-        ActiveLearningDataModule, ActivePredictionDataModule
+from src.dataset import _read_in_data, _random_sample, DataModule
 from src.utils.utils import set_up_tokenizers, Tasks, Task
 from src.utils.generation_utils import ConstraintLogits
 from src.training_paradigm import BaseParadigm

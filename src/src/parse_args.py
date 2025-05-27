@@ -127,6 +127,9 @@ class TrainAndTestArguments:
     training_paradigm: str = field(
         default="learn_from_scratch"
     )
+    example_selection_criteria: str = field(
+        default="least-confident"
+    )
     num_sanity_val_steps: int = field(
         default=2,
         metadata={"help": "how many validation steps to run before training"}

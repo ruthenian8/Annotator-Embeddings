@@ -36,7 +36,7 @@ class BaseModule(pl.LightningModule, ABC):
         self.rouge = ROUGEScore()
         self.bert_score = BERTScore(model_name_or_path="roberta-large", num_threads=0)
         self.squad = SQuAD()
-        self.accuracies: Mapping[Task, Metric] = nn.ModuleDict({task.name: Accuracy() \
+        self.accuracies: Mapping[Task, Metric] = nn.ModuleDict({task.name: F1Score(task="multiclass", num_classes=5, average="micro") \
                                                                 for task in self.hparams.tasks})
         
         if self.hparams.model_type in {"berttokenclassifier"}:
@@ -146,7 +146,7 @@ class BaseModule(pl.LightningModule, ABC):
             self.rouge.reset()
 
             for k, v in self.accuracies.items():
-                self.log(f"accuracy_{k}/{split}", v.compute(), batch_size=instance_count)
+                self.log(f"f1_{k}/{split}", v.compute(), batch_size=instance_count)
                 self.accuracies[k].reset()
             
             for k, v in self.recall_metric.items():
