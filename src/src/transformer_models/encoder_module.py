@@ -188,7 +188,7 @@ class EncoderModule(Module):
             golds = answer_ids
 
             self.accuracies[task.name](preds, golds)
-            self.log(f"accuracy_{task.name}/{split}", self.accuracies[task.name], batch_size=batch_size)
+            self.log(f"f1_{task.name}/{split}", self.accuracies[task.name], batch_size=batch_size)
 
             if self.hparams.model_type in {"berttokenclassifier"}:
 
