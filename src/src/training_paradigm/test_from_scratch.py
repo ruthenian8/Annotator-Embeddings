@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+from __future__ import annotations
+import argparse
+import logging
+import os
+import json
+import random
+import torch
+
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ProgressBar
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
+from transformers import AutoTokenizer, LogitsProcessorList, PreTrainedTokenizerBase
+from collections import defaultdict
+from typing import Union
+from overrides import override
+
+from src.module import BaseModule
+from src.utils.logger_utils import UninitializedWeightsFilter
+from src.transformer_models import EncoderModule, Seq2SeqModule
+from src.dataset import _read_in_data, _random_sample, DataModule
+from src.utils.utils import set_up_tokenizers, Tasks, Task
+from src.utils.generation_utils import ConstraintLogits
+from src.training_paradigm import LearnFromScratchParadigm
+
+
+class TestFromScratchParadigm(LearnFromScratchParadigm):
+
+    def train_and_test(self) -> None:
+        encoder_tokenizer, decoder_tokenizer, \
+            trainer, model = super().train_and_test()
+
+        # Test the final model after all the active learning process
+        self._test_module(trainer=trainer, model=model, encoder_tokenizer=encoder_tokenizer, \
+                decoder_tokenizer=decoder_tokenizer, annotator_id_path = self.args.annotator_id_path, \
+                annotation_label_path = self.args.annotation_label_path, wandb_name=self.args.wandb_name)
