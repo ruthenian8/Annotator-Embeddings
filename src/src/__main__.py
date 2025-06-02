@@ -12,7 +12,7 @@ import torch
 import transformers
 from transformers import HfArgumentParser
 from src.parse_args import model_type_to_dataclass_types
-from src.training_paradigm import LearnFromScratchParadigm
+from src.training_paradigm import LearnFromScratchParadigm, TestFromScratchParadigm
 # from src.training_paradigm import LearnFromScratchParadigm, ActiveLearningParadigm, \
 #     ActiveLearningWithInteractionParadigm
 
@@ -81,6 +81,8 @@ def main() -> None:
     Paradigm = None
     if args.training_paradigm == "learn_from_scratch":
         Paradigm = LearnFromScratchParadigm
+    elif args.training_paradigm == "test_from_scratch":
+        Paradigm = TestFromScratchParadigm
     # elif args.training_paradigm == "active_learning":
     #     Paradigm = ActiveLearningParadigm
     # elif args.training_paradigm == "active_learning_with_interaction":
