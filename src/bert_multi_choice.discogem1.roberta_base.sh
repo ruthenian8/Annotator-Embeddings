@@ -10,7 +10,7 @@
 #SBATCH --account=mihalcea98
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/dnaihao/dnaihao-scratch/anaconda3/envs/ann-embed/lib/
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1
 
 model_name=roberta-multichoice
 dataset=discogem1
@@ -24,8 +24,8 @@ use_annotator_embed=True
 use_annotation_embed=True
 # split_method=annotation
 
-train_batch_size=72
-eval_batch_size=72
+train_batch_size=96
+eval_batch_size=96
 
 output_ckpt_dir=ckpts/${model_name}/text_finetuned/
 num_train_epochs=3
@@ -60,7 +60,7 @@ do
         # question-only experiment
         use_annotation_embed=False
         use_annotator_embed=False
-        for i in {0..2}
+        for i in {3..7}
         do  
             seed=${SEEDS[$i]}
             output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx            
@@ -80,7 +80,7 @@ do
                     --output_ckpt_dir ${output_ckpt_dir} \
                     --num_train_epochs ${num_train_epochs} \
                     --wandb_name ${wandb_name} \
-                    --n_gpu 1 \
+                    --n_gpu 2 \
                     --learning_rate 1e-5 \
                     --linear_scheduler False \
                     --wandb_offline \
@@ -102,58 +102,12 @@ do
                     --use_naiive_concat
             fi
         done
-        exit 0
-
-        # annotation-embed
-        use_annotation_embed=True
-        use_annotator_embed=False
-        for i in {0..2}
-        do  
-            seed=${SEEDS[$i]}
-            output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                
-            echo $output_fn
-            pred_fn_path=../experiment-results/$dataset/$model_name_or_path/$output_fn.jsonl
-            if [ -e "$pred_fn_path" ]; then
-                echo "File exists: $pred_fn_path"
-            else
-                python -m src ${model_name} \
-                    --train_data_path ${train_data_path} \
-                    --dev_data_path ${dev_data_path} \
-                    --test_data_path ${test_data_path} \
-                    --train_batch_size $train_batch_size \
-                    --eval_batch_size $eval_batch_size \
-                    --add_output_tokens True \
-                    --model_name_or_path ${model_name_or_path} \
-                    --output_ckpt_dir ${output_ckpt_dir} \
-                    --num_train_epochs ${num_train_epochs} \
-                    --wandb_name ${wandb_name} \
-                    --n_gpu 1 \
-                    --learning_rate 1e-5 \
-                    --linear_scheduler False \
-                    --wandb_offline \
-                    --training_paradigm learn_from_scratch \
-                    --tasks ${tasks} \
-                    --use_annotator_embed ${use_annotator_embed} \
-                    --use_annotation_embed ${use_annotation_embed} \
-                    --broadcast_annotation_embedding ${broadcast_annotation_embedding} \
-                    --broadcast_annotator_embedding ${broadcast_annotator_embedding} \
-                    --annotator_id_path ${annotator_id_path}\
-                    --annotation_label_path ${annotation_label_path} \
-                    --pred_fn_path ${pred_fn_path} \
-                    --include_pad_annotation ${include_pad_annotation} \
-                    --method ${method} \
-                    --test_mode ${test_mode} \
-                    --check_val_every_n_epoch 1 \
-                    --enable_checkpointing True \
-                    --seed $seed
-            fi
-        done
 
         # annotator-embed
         # restore the values
         use_annotation_embed=False
         use_annotator_embed=True
-        for i in {0..2}
+        for i in {3..7}
         do  
             seed=${SEEDS[$i]}
             output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                
@@ -173,7 +127,7 @@ do
                     --output_ckpt_dir ${output_ckpt_dir} \
                     --num_train_epochs ${num_train_epochs} \
                     --wandb_name ${wandb_name} \
-                    --n_gpu 1 \
+                    --n_gpu 2 \
                     --learning_rate 1e-5 \
                     --linear_scheduler False \
                     --wandb_offline \
@@ -200,7 +154,7 @@ do
         # restore the values
         use_annotation_embed=True
         use_annotator_embed=True
-        for i in {0..2}
+        for i in {3..7}
         do  
             seed=${SEEDS[$i]}
             output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                    
@@ -220,7 +174,7 @@ do
                     --output_ckpt_dir ${output_ckpt_dir} \
                     --num_train_epochs ${num_train_epochs} \
                     --wandb_name ${wandb_name} \
-                    --n_gpu 1 \
+                    --n_gpu 2 \
                     --learning_rate 1e-5 \
                     --linear_scheduler False \
                     --wandb_offline \
