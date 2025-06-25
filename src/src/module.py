@@ -188,6 +188,7 @@ class BaseModule(pl.LightningModule, ABC):
         questions = [output["question"] for output in outputs]
         ids = [output["id"] for output in outputs]
         respondent_ids = [output["respondent_id"] for output in outputs]
+        probs = [str(output["probs"]) for output in outputs]
         # annotator_embed_weights = [output["annotator_embed_weight"] for output in outputs]
         # annotation_embed_weights = [output["annotation_embed_weight"] for output in outputs]
 
@@ -224,9 +225,9 @@ class BaseModule(pl.LightningModule, ABC):
         #                        "annotator_embed_weight": annotator_embed_weight, "annotation_embed_weight": annotation_embed_weight}) \
         #      for pred, gold, question, id, respondent_id, annotator_embed_weight, annotation_embed_weight \
         #          in zip(y_preds, y_golds, questions, ids, respondent_ids, annotator_embed_weights, annotation_embed_weights)]
-        results = [json.dumps({"pred": pred, "gold": gold, "question": question, "id": id, "respondent_id": respondent_id}) \
-             for pred, gold, question, id, respondent_id \
-                 in zip(y_preds, y_golds, questions, ids, respondent_ids)]
+        results = [json.dumps({"pred": pred, "gold": gold, "question": question, "id": id, "respondent_id": respondent_id, "prob": prob}) \
+             for pred, gold, question, id, respondent_id, prob \
+                 in zip(y_preds, y_golds, questions, ids, respondent_ids, probs)]
         
         # output prediction file
         if not os.path.exists(os.path.dirname(self.hparams.pred_fn_path)):

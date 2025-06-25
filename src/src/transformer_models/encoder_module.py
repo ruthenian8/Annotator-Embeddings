@@ -155,6 +155,7 @@ class EncoderModule(Module):
         output["question"] = batch["question"]
         output["gold"] = batch["answer"]
         output["respondent_id"] = batch["origin_annotator_id"]
+        output["probs"] = logits.softmax(dim=-1)
         
         # information about the embedding output
         # For debug purpose: maybe too much information
