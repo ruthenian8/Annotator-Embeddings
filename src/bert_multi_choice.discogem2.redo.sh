@@ -40,6 +40,8 @@ annotator_id_path=example-data/${dataset}-processed/annotator_ids.json
 annotation_label_path=example-data/${dataset}-processed/annotation_labels.json
 SEEDS=(32 42 52 62 72 82 92 102 112 122)
 # SEEDS=(32 42 52)
+version=59
+
 
 mkdir -p ${output_ckpt_dir}
 mkdir -p ${log_dir}
@@ -62,14 +64,14 @@ do
         for i in 0
         do  
             seed=${SEEDS[$i]}
-            output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                    
+            output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$version                    
             echo $output_fn
             pred_fn_path=../experiment-results/$dataset/$model_name_or_path/$output_fn.jsonl
             python -m src ${model_name} \
                 --train_data_path ${train_data_path} \
                 --dev_data_path ${dev_data_path} \
                 --test_data_path ${test_data_path} \
-                --load_ckpt_path "" \
+                --load_ckpt_path "/content/version_${version}/checkpoints/epoch=2-step=2166.ckpt" \
                 --train_batch_size $train_batch_size \
                 --eval_batch_size $eval_batch_size \
                 --add_output_tokens True \
