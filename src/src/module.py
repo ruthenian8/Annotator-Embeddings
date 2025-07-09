@@ -51,6 +51,8 @@ class BaseModule(pl.LightningModule, ABC):
         self.testing_step_outputs = []
 
     def _on_eval_start(self) -> None:
+        pl.seed_everything(self.hparams.seed, workers=True)
+        self.eval()
         self.bert_score.embedding_device = self.device
 
     @overrides

@@ -44,6 +44,7 @@ class TrainAndTestArguments:
     num_workers: int = len(os.sched_getaffinity(0)) // max(torch.cuda.device_count(), 1) \
                     if sys.platform in {"linux1", "linux2"} else 10 // max(torch.cuda.device_count(), 1)
     output_ckpt_dir: Optional[str] = None
+    load_ckpt_path: Optional[str] = None
     model_name_or_path: str = "t5-base"
     max_seq_length: int = field(
         default=512,

@@ -28,7 +28,7 @@ train_batch_size=72
 eval_batch_size=72
 
 output_ckpt_dir=ckpts/${model_name}/text_finetuned/
-num_train_epochs=3
+num_train_epochs=0
 wandb_name=${model_name}-${dataset}
 log_dir=logs/${model_name}/
 log_path=logs/${model_name}/baseline.log
@@ -59,47 +59,44 @@ do
         # restore the values
         use_annotation_embed=True
         use_annotator_embed=True
-        for i in {0}
+        for i in 0
         do  
             seed=${SEEDS[$i]}
-            ckpt=""
             output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                    
             echo $output_fn
             pred_fn_path=../experiment-results/$dataset/$model_name_or_path/$output_fn.jsonl
-            if [ -e "$pred_fn_path" ]; then
-                echo "File exists: $pred_fn_path"
-            else
-                python -m src ${model_name} \
-                    --train_data_path ${train_data_path} \
-                    --dev_data_path ${dev_data_path} \
-                    --test_data_path ${test_data_path} \
-                    --train_batch_size $train_batch_size \
-                    --eval_batch_size $eval_batch_size \
-                    --add_output_tokens True \
-                    --model_name_or_path ${model_name_or_path} \
-                    --output_ckpt_dir ${output_ckpt_dir} \
-                    --num_train_epochs 0 \
-                    --wandb_name ${wandb_name} \
-                    --n_gpu 1 \
-                    --learning_rate 1e-5 \
-                    --linear_scheduler False \
-                    --wandb_offline \
-                    --training_paradigm learn_from_scratch \
-                    --tasks ${tasks} \
-                    --use_annotator_embed ${use_annotator_embed} \
-                    --use_annotation_embed ${use_annotation_embed} \
-                    --broadcast_annotation_embedding ${broadcast_annotation_embedding} \
-                    --broadcast_annotator_embedding ${broadcast_annotator_embedding} \
-                    --annotator_id_path ${annotator_id_path}\
-                    --annotation_label_path ${annotation_label_path} \
-                    --pred_fn_path ${pred_fn_path} \
-                    --include_pad_annotation ${include_pad_annotation} \
-                    --method ${method} \
-                    --test_mode ${test_mode} \
-                    --check_val_every_n_epoch 1 \
-                    --enable_checkpointing True \
-                    --seed $seed
-            fi
+            python -m src ${model_name} \
+                --train_data_path ${train_data_path} \
+                --dev_data_path ${dev_data_path} \
+                --test_data_path ${test_data_path} \
+                --load_ckpt_path "" \
+                --train_batch_size $train_batch_size \
+                --eval_batch_size $eval_batch_size \
+                --add_output_tokens True \
+                --model_name_or_path ${model_name_or_path} \
+                --output_ckpt_dir ${output_ckpt_dir} \
+                --num_train_epochs ${num_train_epochs} \
+                --wandb_name ${wandb_name} \
+                --n_gpu 1 \
+                --learning_rate 1e-5 \
+                --linear_scheduler False \
+                --wandb_offline \
+                --training_paradigm learn_from_scratch \
+                --tasks ${tasks} \
+                --use_annotator_embed ${use_annotator_embed} \
+                --use_annotation_embed ${use_annotation_embed} \
+                --broadcast_annotation_embedding ${broadcast_annotation_embedding} \
+                --broadcast_annotator_embedding ${broadcast_annotator_embedding} \
+                --annotator_id_path ${annotator_id_path}\
+                --annotation_label_path ${annotation_label_path} \
+                --pred_fn_path ${pred_fn_path} \
+                --include_pad_annotation ${include_pad_annotation} \
+                --method ${method} \
+                --test_mode ${test_mode} \
+                --check_val_every_n_epoch 1 \
+                --enable_checkpointing True \
+                --num_workers 0 \
+                --seed $seed
         done
     done
 done

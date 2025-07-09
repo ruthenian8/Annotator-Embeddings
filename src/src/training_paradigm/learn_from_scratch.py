@@ -44,6 +44,7 @@ class LearnFromScratchParadigm(BaseParadigm):
                 decoder_tokenizer=decoder_tokenizer)
         
         # Test the final model after all the active learning process
+        model.eval()
         self._test_module(trainer=trainer, model=model, encoder_tokenizer=encoder_tokenizer, \
                 decoder_tokenizer=decoder_tokenizer, annotator_id_path = self.args.annotator_id_path, \
                 annotation_label_path = self.args.annotation_label_path, wandb_name=self.args.wandb_name)
