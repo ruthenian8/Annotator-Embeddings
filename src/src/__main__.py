@@ -6,7 +6,7 @@ import torch
 import json
 import numpy as np
 np.object = object
-np.bool = bool    
+np.bool = bool
 import random
 import torch
 import transformers
@@ -15,6 +15,27 @@ from src.parse_args import model_type_to_dataclass_types
 from src.training_paradigm import LearnFromScratchParadigm
 # from src.training_paradigm import LearnFromScratchParadigm, ActiveLearningParadigm, \
 #     ActiveLearningWithInteractionParadigm
+
+
+def set_seed(seed):
+    import os
+    import random
+    import transformers
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    transformers.set_seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.use_deterministic_algorithms(True)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    pl.seed_everything(seed, workers=True)
 
 
 def main() -> None:
@@ -46,6 +67,7 @@ def main() -> None:
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = True
+
     with open(args.annotator_id_path, 'r') as f:
         annotator_ids = json.load(f)
     args.num_annotators = len(annotator_ids)

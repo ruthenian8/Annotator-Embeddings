@@ -51,6 +51,8 @@ class BaseModule(pl.LightningModule, ABC):
         self.testing_step_outputs = []
 
     def _on_eval_start(self) -> None:
+        pl.seed_everything(self.hparams.seed, workers=True)
+        self.eval()
         self.bert_score.embedding_device = self.device
 
     @overrides
@@ -188,7 +190,8 @@ class BaseModule(pl.LightningModule, ABC):
         questions = [output["question"] for output in outputs]
         ids = [output["id"] for output in outputs]
         respondent_ids = [output["respondent_id"] for output in outputs]
-        probs = [str(output["probs"]) for output in outputs]
+        probs = [output["probs"].cpu().numpy().tolist() for output in outputs]
+        probs = [str(i) for batch in probs for i in batch]
         # annotator_embed_weights = [output["annotator_embed_weight"] for output in outputs]
         # annotation_embed_weights = [output["annotation_embed_weight"] for output in outputs]
 
@@ -198,8 +201,8 @@ class BaseModule(pl.LightningModule, ABC):
                 if isinstance(ll, list):
                     for ele in ll:
                         pl.append(ele)
-                elif isinstance(ll, float):
-                    pl.append(ele)
+                elif isinstance(ll, float) or isinstance(ll, str):
+                    pl.append(ll)
                 else:
                     raise RuntimeWarning(f"Type {type(ll)} not supported in test processing")
             return pl

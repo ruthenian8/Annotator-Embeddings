@@ -28,7 +28,7 @@ train_batch_size=72
 eval_batch_size=72
 
 output_ckpt_dir=ckpts/${model_name}/text_finetuned/
-num_train_epochs=3
+num_train_epochs=0
 wandb_name=${model_name}-${dataset}
 log_dir=logs/${model_name}/
 log_path=logs/${model_name}/baseline.log
@@ -40,6 +40,8 @@ annotator_id_path=example-data/${dataset}-processed/annotator_ids.json
 annotation_label_path=example-data/${dataset}-processed/annotation_labels.json
 SEEDS=(32 42 52 62 72 82 92 102 112 122)
 # SEEDS=(32 42 52)
+version=59
+
 
 mkdir -p ${output_ckpt_dir}
 mkdir -p ${log_dir}

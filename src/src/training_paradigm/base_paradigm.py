@@ -65,6 +65,7 @@ class BaseParadigm:
         if hasattr(self.args, 'load_ckpt_path') and self.args.load_ckpt_path:
             print("Loading from a checkpoint and continue training...")
             model = model_class.load_from_checkpoint(self.args.load_ckpt_path)
+            # model = model_class.load_from_checkpoint(self.args.load_ckpt_path, hparams_file=os.path.dirname(os.path.dirname(self.args.load_ckpt_path)) + "/" + "hparams.yaml")
         else:
             model = model_class(**self.args.__dict__)
         return model
@@ -93,7 +94,7 @@ class BaseParadigm:
         #                     log_every_n_steps=1, logger=loggers, callbacks=callbacks, val_check_interval=self.args.val_check_interval,
         #                     check_val_every_n_epoch=self.args.check_val_every_n_epoch, num_sanity_val_steps=self.args.num_sanity_val_steps,
         #                     enable_checkpointing=self.args.enable_checkpointing)
-        trainer = pl.Trainer(accumulate_grad_batches=self.args.gradient_accumulation_steps, devices=self.args.n_gpu,
+        trainer = pl.Trainer(deterministic=True, accumulate_grad_batches=self.args.gradient_accumulation_steps, devices=self.args.n_gpu,
                             max_epochs=self.args.num_train_epochs, precision=16 if self.args.fp_16 else 32,
                             gradient_clip_val=self.args.max_grad_norm, profiler=self.args.profiler,
                             log_every_n_steps=1, logger=loggers, callbacks=callbacks, val_check_interval=self.args.val_check_interval,
@@ -111,7 +112,9 @@ class BaseParadigm:
                                                         annotation_label_path = self.args.annotation_label_path, 
                                                         wandb_name=self.args.wandb_name,
                                                         tasks = Tasks([(task.id, task.name)]))
-            trainer.test(model, datamodule=dm)
+            with torch.no_grad():
+                model.eval()
+                trainer.test(model, datamodule=dm)
 
     def train_and_test(self) -> None:
         # initialize the task object
