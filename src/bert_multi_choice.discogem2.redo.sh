@@ -59,10 +59,10 @@ do
         # restore the values
         use_annotation_embed=True
         use_annotator_embed=True
-        for i in {0}
+        for i in 2
         do  
             seed=${SEEDS[$i]}
-            ckpt=""
+            ckpt="/home/dignatev/Annotator-Embeddings/src/transformer_models/lightning_logs/version_59/checkpoints/epoch=2-step=2166.ckpt"
             output_fn=use_annotator_embed-${use_annotator_embed}-use_annotation_embed-${use_annotation_embed}-pad-${include_pad_annotation}-method-${method}-test_mode-${test_mode}-seed-$seed-$i-$split_method-$tt_idx                    
             echo $output_fn
             pred_fn_path=../experiment-results/$dataset/$model_name_or_path/$output_fn.jsonl
@@ -77,6 +77,7 @@ do
                     --eval_batch_size $eval_batch_size \
                     --add_output_tokens True \
                     --model_name_or_path ${model_name_or_path} \
+                    --load_ckpt_path ${ckpt} \
                     --output_ckpt_dir ${output_ckpt_dir} \
                     --num_train_epochs 0 \
                     --wandb_name ${wandb_name} \

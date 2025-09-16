@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import os
 import argparse
 import sys
 import torch
@@ -7,7 +7,9 @@ import json
 import numpy as np
 np.object = object
 np.bool = bool    
-
+import random
+import torch
+import transformers
 from transformers import HfArgumentParser
 from src.parse_args import model_type_to_dataclass_types
 from src.training_paradigm import LearnFromScratchParadigm
@@ -33,10 +35,17 @@ def main() -> None:
     args = argparse.Namespace(**{k: v for args in args_in_dataclasses for k, v in args.__dict__.items()})
 
     # Fix the random seed for PyTorch
+    os.environ['PYTHONHASHSEED'] = str(args.seed)
     torch.manual_seed(args.seed)
+    random.seed(args.seed)
+    transformers.set_seed(args.seed)
     # Fix the random seed for NumPy
     np.random.seed(args.seed)
-
+    torch.cuda.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = True
     with open(args.annotator_id_path, 'r') as f:
         annotator_ids = json.load(f)
     args.num_annotators = len(annotator_ids)
