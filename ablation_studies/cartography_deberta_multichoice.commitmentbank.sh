@@ -16,8 +16,6 @@ dataset=commitmentbank
 tasks=certainty
 method=add
 include_pad_annotation=True
-use_annotator_embed=True
-use_annotation_embed=True
 
 train_batch_size=16
 num_train_epochs=3

@@ -16,8 +16,6 @@ dataset=humor
 tasks=humor
 method=add
 include_pad_annotation=True
-use_annotator_embed=True
-use_annotation_embed=True
 
 train_batch_size=128
 num_train_epochs=3
