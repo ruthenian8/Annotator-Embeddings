@@ -199,14 +199,8 @@ def main() -> None:
     loss_fn = torch.nn.CrossEntropyLoss()
 
     task_list = list(tasks)
-    if not task_list:
-        raise ValueError("No tasks were provided. Please specify at least one task.")
-    if len(task_list) > 1:
-        print(
-            f"Warning: multiple tasks were provided ({task_list}); "
-            f"only the first task '{task_list[0]}' will be used.",
-            file=sys.stderr,
-        )
+    if len(task_list) != 1:
+        raise ValueError("This script currently supports a single task at a time.")
     task = task_list[0]
     label_names = decoder_tokenizers[task].labels
 
