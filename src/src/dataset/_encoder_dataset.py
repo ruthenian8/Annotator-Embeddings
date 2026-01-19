@@ -53,7 +53,8 @@ class EncoderDataset(BaseDataset):
             "answer": answer,
             "task_id": self.task.id,
             "annotator_id": instance["respondent_id"],
-            "annotations":  instance["anns_except_current_one"] 
+            "annotations":  instance["anns_except_current_one"],
+            "pair_id": instance.get("pair_id"),
         }
 
         return output
