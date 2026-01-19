@@ -18,9 +18,9 @@ method=add
 include_pad_annotation=True
 
 train_batch_size=256
-num_train_epochs=3
+num_train_epochs=5
 learning_rate=1e-5
-max_seq_length=256
+max_seq_length=128
 warmup_steps=0
 weight_decay=0.0
 
