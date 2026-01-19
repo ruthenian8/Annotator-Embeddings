@@ -8,6 +8,23 @@ from copy import deepcopy
 
 import pandas as pd
 
+PAIR_SEPARATOR = "</s>"
+
+
+def _normalize_text(value: object) -> str:
+    if pd.isna(value):
+        return ""
+    return str(value).strip()
+
+
+def _join_pair_text(parent_text: object, child_text: object) -> str:
+    first = _normalize_text(parent_text)
+    second = _normalize_text(child_text)
+    if first and second:
+        return f"{first}{PAIR_SEPARATOR}{second}"
+    return first or second
+
+
 def main(args):
     # prepare output directories
     processed_dir = f"Annotator-Embeddings/src/example-data/{args.dataset_name}-processed/"
@@ -44,9 +61,10 @@ def main(args):
         for _, row in group.iterrows():
             ann = {
                 "id": next_id,
-                "sentence": row['prep_parent_text'] + " " + row['prep_text'],
+                "sentence": _join_pair_text(row['prep_parent_text'], row['prep_text']),
                 args.task_name: str(row['label']),
                 "respondent_id": str(row['annotator']),
+                "pair_id": str(pair_id),
                 "anns_except_current_one": [lab for lab in all_labels if lab != str(row['label'])],
                 # use the original split column:
                 "split": row['split'].strip().lower()

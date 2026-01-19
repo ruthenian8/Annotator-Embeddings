@@ -166,6 +166,19 @@ def iter_eval_batches(eval_loader) -> Iterator[tuple[Optional[str], dict]]:
             yield None, batch
 
 
+def normalize_value(value):
+    if isinstance(value, torch.Tensor):
+        value = value.detach().cpu()
+        if value.dim() == 0 or value.numel() == 1:
+            return value.item()
+        return value.tolist()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
 def evaluate_model(
     model: torch.nn.Module,
     eval_loader,
@@ -358,37 +371,20 @@ def main() -> None:
                 probs = torch.softmax(logits, dim=-1)
                 data_ids = batch["data_id"]
                 batch_annotator_ids = batch["annotator_id"]
+                pair_ids = batch.get("pair_id")
 
                 for idx, data_id in enumerate(data_ids):
-                    # Ensure data_id is converted to native Python types for safe DataFrame/CSV usage
-                    data_id_value = data_id
-                    if isinstance(data_id_value, torch.Tensor):
-                        data_id_value = data_id_value.detach().cpu()
-                        if data_id_value.dim() == 0 or data_id_value.numel() == 1:
-                            data_id_value = data_id_value.item()
-                        else:
-                            data_id_value = data_id_value.tolist()
-                    elif isinstance(data_id_value, np.ndarray):
-                        data_id_value = data_id_value.tolist()
-                    elif isinstance(data_id_value, np.generic):
-                        data_id_value = data_id_value.item()
-
-                    annotator_id_value = batch_annotator_ids[idx]
-                    if isinstance(annotator_id_value, torch.Tensor):
-                        annotator_id_value = annotator_id_value.detach().cpu()
-                        if annotator_id_value.dim() == 0 or annotator_id_value.numel() == 1:
-                            annotator_id_value = annotator_id_value.item()
-                        else:
-                            annotator_id_value = annotator_id_value.tolist()
-                    elif isinstance(annotator_id_value, np.ndarray):
-                        annotator_id_value = annotator_id_value.tolist()
-                    elif isinstance(annotator_id_value, np.generic):
-                        annotator_id_value = annotator_id_value.item()
+                    data_id_value = normalize_value(data_id)
+                    annotator_id_value = normalize_value(batch_annotator_ids[idx])
+                    pair_id_value = None
+                    if pair_ids is not None:
+                        pair_id_value = normalize_value(pair_ids[idx])
 
                     gold_label_id = int(answer_ids[idx].detach().cpu().item())
                     row = {
                         "data_id": data_id_value,
                         "annotator_id": annotator_id_value,
+                        "pair_id": pair_id_value,
                         "epoch": epoch,
                         "gold_label_id": gold_label_id,
                         "gold_label": decoder_tokenizers[task].id2label(gold_label_id),
