@@ -78,6 +78,7 @@ def parse_args() -> argparse.Namespace:
         description="Collect dataset cartography statistics for DeBERTa multi-choice models."
     )
     parser.add_argument("--train_data_path", required=True)
+    parser.add_argument("--dev_data_path")
     parser.add_argument("--annotator_id_path", required=True)
     parser.add_argument("--annotation_label_path", required=True)
     parser.add_argument("--tasks", nargs="+", required=True)
@@ -93,6 +94,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include_pad_annotation", action="store_true")
     parser.add_argument("--broadcast_annotator_embedding", action="store_true")
     parser.add_argument("--broadcast_annotation_embedding", action="store_true")
+    parser.add_argument("--log_every_n_steps", type=int, default=50)
     parser.add_argument(
         "--use_naive_concat",
         "--use_naiive_concat",
@@ -107,6 +109,8 @@ def parse_args() -> argparse.Namespace:
     # Validate that required path arguments point to existing files.
     if not Path(args.train_data_path).is_file():
         parser.error(f"--train_data_path does not exist or is not a file: {args.train_data_path}")
+    if args.dev_data_path and not Path(args.dev_data_path).is_file():
+        parser.error(f"--dev_data_path does not exist or is not a file: {args.dev_data_path}")
     if not Path(args.annotator_id_path).is_file():
         parser.error(f"--annotator_id_path does not exist or is not a file: {args.annotator_id_path}")
     if not Path(args.annotation_label_path).is_file():
@@ -145,6 +149,63 @@ def iter_train_batches(train_loader) -> Iterator[tuple[Optional[str], dict]]:
     else:
         for batch in train_loader:
             yield None, batch
+
+
+def iter_eval_batches(eval_loader) -> Iterator[tuple[Optional[str], dict]]:
+    """Iterate over evaluation batches from single or multi-task data loader."""
+    if isinstance(eval_loader, dict):
+        for task_name, loader in eval_loader.items():
+            for batch in loader:
+                yield task_name, batch
+    elif isinstance(eval_loader, list):
+        for loader in eval_loader:
+            for batch in loader:
+                yield None, batch
+    else:
+        for batch in eval_loader:
+            yield None, batch
+
+
+def evaluate_model(
+    model: torch.nn.Module,
+    eval_loader,
+    loss_fn: torch.nn.Module,
+    task: str,
+    decoder_tokenizers,
+    device: torch.device,
+) -> dict:
+    """Compute loss and accuracy on the evaluation loader."""
+    model.eval()
+    total_loss = 0.0
+    total_correct = 0
+    total_examples = 0
+    with torch.no_grad():
+        for _, batch in iter_eval_batches(eval_loader):
+            input_ids = batch["question_ids"].to(device)
+            attention_mask = batch["question_mask"].to(device)
+            annotator_ids = batch["annotator_id"].to(device)
+            annotations = batch["annotations"].to(device)
+            answer_ids = batch["answer_ids"].to(device)
+
+            logits, _ = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                task=task,
+                annotator_ids=annotator_ids,
+                annotations=annotations,
+            )
+
+            loss = loss_fn(
+                logits.view(-1, decoder_tokenizers[task].num_labels),
+                answer_ids.view(-1),
+            )
+            total_loss += loss.item() * answer_ids.numel()
+            predictions = torch.argmax(logits, dim=-1)
+            total_correct += (predictions == answer_ids).sum().item()
+            total_examples += answer_ids.numel()
+    avg_loss = total_loss / total_examples if total_examples else 0.0
+    accuracy = total_correct / total_examples if total_examples else 0.0
+    return {"loss": avg_loss, "accuracy": accuracy, "examples": total_examples}
 
 
 def main() -> None:
@@ -186,6 +247,7 @@ def main() -> None:
         use_naiive_concat=args.use_naive_concat,
     )
     train_loader = data_module.train_dataloader()
+    dev_loader = data_module.val_dataloader() if args.dev_data_path else None
 
     model = EncoderModule(decoder_tokenizer=decoder_tokenizers, **args.__dict__)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -211,7 +273,8 @@ def main() -> None:
     for epoch in range(1, args.num_train_epochs + 1):
         # Training phase
         model.train()
-        for _, batch in iter_train_batches(train_loader):
+        running_loss = 0.0
+        for step, (_, batch) in enumerate(iter_train_batches(train_loader), start=1):
             optimizer.zero_grad()
             input_ids = batch["question_ids"].to(device)
             attention_mask = batch["question_mask"].to(device)
@@ -234,6 +297,45 @@ def main() -> None:
             loss.backward()
             optimizer.step()
             scheduler.step()
+            running_loss += loss.item()
+
+            if args.log_every_n_steps > 0 and step % args.log_every_n_steps == 0:
+                avg_loss = running_loss / args.log_every_n_steps
+                print(
+                    f"Epoch {epoch}/{args.num_train_epochs} "
+                    f"Step {step}/{steps_per_epoch} "
+                    f"Loss {avg_loss:.4f}"
+                )
+                running_loss = 0.0
+
+        if args.log_every_n_steps > 0 and running_loss > 0:
+            remaining_steps = steps_per_epoch % args.log_every_n_steps
+            avg_loss = running_loss / max(remaining_steps, 1)
+            print(
+                f"Epoch {epoch}/{args.num_train_epochs} "
+                f"Step {steps_per_epoch}/{steps_per_epoch} "
+                f"Loss {avg_loss:.4f}"
+            )
+
+        if dev_loader is not None:
+            metrics = evaluate_model(
+                model=model,
+                eval_loader=dev_loader,
+                loss_fn=loss_fn,
+                task=task,
+                decoder_tokenizers=decoder_tokenizers,
+                device=device,
+            )
+            print(
+                f"Epoch {epoch}/{args.num_train_epochs} "
+                f"Dev loss {metrics['loss']:.4f} "
+                f"Dev accuracy {metrics['accuracy']:.4f} "
+                f"Examples {metrics['examples']}"
+            )
+        else:
+            print(
+                "Skipping dev evaluation because --dev_data_path was not provided."
+            )
 
         # After training for this epoch, collect cartography statistics in eval mode
         model.eval()
@@ -255,6 +357,7 @@ def main() -> None:
 
                 probs = torch.softmax(logits, dim=-1)
                 data_ids = batch["data_id"]
+                batch_annotator_ids = batch["annotator_id"]
 
                 for idx, data_id in enumerate(data_ids):
                     # Ensure data_id is converted to native Python types for safe DataFrame/CSV usage
@@ -270,16 +373,29 @@ def main() -> None:
                     elif isinstance(data_id_value, np.generic):
                         data_id_value = data_id_value.item()
 
+                    annotator_id_value = batch_annotator_ids[idx]
+                    if isinstance(annotator_id_value, torch.Tensor):
+                        annotator_id_value = annotator_id_value.detach().cpu()
+                        if annotator_id_value.dim() == 0 or annotator_id_value.numel() == 1:
+                            annotator_id_value = annotator_id_value.item()
+                        else:
+                            annotator_id_value = annotator_id_value.tolist()
+                    elif isinstance(annotator_id_value, np.ndarray):
+                        annotator_id_value = annotator_id_value.tolist()
+                    elif isinstance(annotator_id_value, np.generic):
+                        annotator_id_value = annotator_id_value.item()
+
                     gold_label_id = int(answer_ids[idx].detach().cpu().item())
                     row = {
                         "data_id": data_id_value,
+                        "annotator_id": annotator_id_value,
                         "epoch": epoch,
                         "gold_label_id": gold_label_id,
                         "gold_label": decoder_tokenizers[task].id2label(gold_label_id),
                     }
                     for label_idx, _ in enumerate(label_names):
                         row[f"label_{label_idx}"] = float(
-                            probs[idx, label_idx].detach().cpu().item()
+                            round(probs[idx, label_idx].detach().cpu().item(), 3)
                         )
                     rows.append(row)
 
