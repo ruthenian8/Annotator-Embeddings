@@ -99,6 +99,7 @@ def parse_args() -> argparse.Namespace:
         dest="use_naive_concat",
         action="store_true",
     )
+    parser.add_argument("--wandb_name", type=str, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output_csv", default="cartography_deberta_multichoice.csv")
     args = parser.parse_args()
@@ -179,6 +180,7 @@ def main() -> None:
         encoder_tokenizer=encoder_tokenizer,
         decoder_tokenizer=decoder_tokenizers,
         tasks=tasks,
+        wandb_name=args.wandb_name,
         annotator_id_path=args.annotator_id_path,
         annotation_label_path=args.annotation_label_path,
         use_naiive_concat=args.use_naive_concat,
