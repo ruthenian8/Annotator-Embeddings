@@ -37,7 +37,7 @@ mkdir -p ../experiment-results/cartography/${dataset}
 for i in 0
 do
     seed=${SEEDS[$i]}
-    output_csv_seed=../experiment-results/cartography/sentiment/cartography_deberta_multichoice_sentiment_seed_${seed}.csv
+    output_csv_seed=../experiment-results/cartography/${dataset}/cartography_deberta_multichoice_${dataset}_seed_${seed}.csv
     
     echo "Running cartography collection with seed $seed"
     
